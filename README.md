@@ -16,18 +16,18 @@ Refers to the name of the manga you want to dowload as displayed on mangafox.me<
 Case insensitive and can contain space but not special characters<br/>
 Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : <pre>www.mangafox.me/manga/&lt;manga name&gt;/</pre>
 
-<h4>EXAMPLES</h4>
+<h4>Examples</h4>
 <pre>java -jar mangafox_downloader.jar naruto</pre>
 <pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" - Kangoku Gakuen refers to Prison School</pre>
 
 
-[OPTIONAL] <pre>-v &lt;volume number&gt; </pre>
-Use this option to download only the specified volume of a manga (= every chapter of the specified volume)
-The volume number is as displayed on the manga page. Ranging from 0 to n
-The volume number can also be "TBD" (refering to "Volume TBD" - To be determined)
-The volume number can also be "NA" (refering to "Volume Not Available")
+<b>OPTIONAL<b/><pre>-v &lt;volume number&gt;</pre>
+Use this option to download only the specified volume of a manga (= every chapter of the specified volume)<br/>
+The volume number is as displayed on the manga page. Ranging from 0 to n<br/>
+The volume number can also be "TBD" (refering to "Volume TBD" - To be determined)<br/>
+The volume number can also be "NA" (refering to "Volume Not Available")<br/>
 
-EXAMPLES
+<h4>Examples</h4>
 <pre>java -jar mangafox_downloader.jar naruto -v NA</pre>
 <pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" -v 18</pre>
 
