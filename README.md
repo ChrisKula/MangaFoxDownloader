@@ -1,46 +1,43 @@
-# MangaFoxDownloader
+<h2>MangaFoxDownloader</h2>
 Simple script for downloading mangas from mangafox.me
 
 This script let you easily download mangas from mangafox.me. You can also download a specific volume or a specific chapter
 
 In order to use this script, you must have at least JRE 1.6 installed on your computer.
 
-# Syntax
+<h3>Syntax</h3>
 
 Type the following in terminal
+<pre>java -jar mangafox_downloader.jar [REQUIRED] &lt;manga name&gt; [OPTIONAL] -v &lt;volume number&gt; -c &lt;chapitre number&gt;</pre>;
 
-```Batchfile
-java -jar mangafox_downloader.jar [REQUIRED] <manga name> [OPTIONAL] -v <volume number> -c <chapitre number>
-```
-
-# Options
-[REQUIRED] ```<manga name>```
+<h3>Options</h3>
+[REQUIRED] <pre>&lt;manga name&gt;</pre>
 Refers to the name of the manga you want to dowload as displayed on mangafox.me
 Case insensitive and can contain space but not special characters
-Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : www.mangafox.me/manga/<manga name>/
+Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : www.mangafox.me/manga/&lt;manga name&gt;/
 
-EXAMPLES
-```java -jar mangafox_downloader.jar naruto```
-```java -jar mangafox_downloader.jar "Kangoku Gakuen" - Kangoku Gakuen refers to Prison School```
+<h4>EXAMPLES</h4>
+<pre>java -jar mangafox_downloader.jar naruto</pre>
+<pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" - Kangoku Gakuen refers to Prison School</pre>
 
 
-[OPTIONAL] -v <volume number> 
+[OPTIONAL] <pre>-v &lt;volume number&gt; </pre>
 Use this option to download only the specified volume of a manga (= every chapter of the specified volume)
 The volume number is as displayed on the manga page. Ranging from 0 to n
 The volume number can also be "TBD" (refering to "Volume TBD" - To be determined)
 The volume number can also be "NA" (refering to "Volume Not Available")
 
 EXAMPLES
-```java -jar mangafox_downloader.jar naruto -v NA```
-```java -jar mangafox_downloader.jar "Kangoku Gakuen" -v 18```
+<pre>java -jar mangafox_downloader.jar naruto -v NA</pre>
+<pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" -v 18</pre>
 
 
-[OPTIONAL] -v <volume number> -c <chapter number>
+[OPTIONAL] -v &lt;volume number&gt; -c &lt;chapter number&gt;
 Use this option to download only the specified chapter of the specified volume of a manga
 When using -c, -v is mandatory as some mangas' chapters numbers aren't unique (i.e. the Dective Conan manga has multiple "Chapter 1" who knows why)
 Be sure the specified chapter is contained within the specified volume
 The chapter number is as displayed on the manga page. Ranging from 0 to n
 
 EXAMPLES
-```java -jar mangafox_downloader.jar naruto -v 60 -c 575```
-```java -jar mangafox_downloader.jar "Kangoku Gakuen" -v TBD -c 197```
+<pre>java -jar mangafox_downloader.jar naruto -v 60 -c 575</pre>
+<pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" -v TBD -c 197</pre>
