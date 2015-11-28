@@ -40,8 +40,8 @@ The volume number can also be <code>NA</code> (refering to "Volume Not Available
 
 <b>OPTIONAL</b><pre>-v &lt;volume number&gt; -c &lt;chapter number&gt;</pre>
 Use this option to download only the specified chapter of the specified volume of a manga<br/>
-When using -c, -v is mandatory as some mangas' chapters numbers aren't unique (i.e. the Dective Conan manga has multiple "Chapter 1" who knows why)<br/>
-Be sure the specified chapter is contained within the specified volume<br/>
+When using <code>-c</code>, <code>-v</code> is mandatory as some mangas' chapters numbers aren't unique (i.e. the Dective Conan manga has multiple "Chapter 1" who knows why)<br/>
+Be sure the specified chapter exists in the specified volume<br/>
 The chapter number is as displayed on the manga page. Ranging from 0 to n
 
 <h4>EXAMPLES</h4>
