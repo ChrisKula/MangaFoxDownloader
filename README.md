@@ -14,7 +14,7 @@ Type the following in terminal
 <b>REQUIRED</b> <pre>&lt;manga name&gt;</pre>
 Refers to the name of the manga you want to dowload as displayed on mangafox.me<br/>
 Case insensitive and can contain space but not special characters<br/>
-Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : www.mangafox.me/manga/&lt;manga name&gt;/
+Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : <pre>www.mangafox.me/manga/&lt;manga name&gt;/</pre>
 
 <h4>EXAMPLES</h4>
 <pre>java -jar mangafox_downloader.jar naruto</pre>
