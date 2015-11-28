@@ -3,7 +3,7 @@ Simple script for downloading mangas from mangafox.me
 
 This script let you easily download mangas from mangafox.me. You can also download a specific volume or a specific chapter
 
-In order to use this script, you must have at least JRE 1.6 installed on your computer.
+In order to use this script, you must have at least <b>JRE 1.6</b> installed on your computer.<br/>
 The script can be direclty downloaded from the project directory on GitHub.
 
 <h3>DISCLAIMER</h3>
