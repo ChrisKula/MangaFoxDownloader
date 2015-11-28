@@ -4,7 +4,10 @@ Simple script for downloading mangas from mangafox.me
 This script let you easily download mangas from mangafox.me. You can also download a specific volume or a specific chapter
 
 In order to use this script, you must have at least JRE 1.6 installed on your computer.
-The script can direclty downloaded from the project directory on GitHub.
+The script can be direclty downloaded from the project directory on GitHub.
+
+<h3>DISCLAIMER</h3>
+Copyrights and trademarks for the manga, and other promotional materials are held by their respective owners and their use is allowed under the fair use clause of the Copyright Law. 
 
 <h3>Syntax and Usage</h3>
 
@@ -44,8 +47,9 @@ The chapter number is as displayed on the manga page. Ranging from 0 to n
 <pre>java -jar mangafox_downloader.jar "Kangoku Gakuen" -v TBD -c 197</pre>
 
 <h3>Installation</h3>
-If you want to generate the jar file yourself, download this project and open it as a Maven project in Eclipse then use the Maven goal <pre>package</pre> to generate the file. (In Eclipse, right click on the project -> Run as -> Maven build ... and type "package" in the goal field)
+If you want to generate the jar file yourself, download this project and open it as a Maven project in Eclipse then use the Maven goal <code>package</code> to generate the file.<br/>
+In Eclipse, right click on the project -> Run as -> Maven build ... and type <code>package</code> in the goal field
 
-You can also execute <pre>mvn package</pre> at project root.
+You can also execute <code>mvn package</code> at the project's root.
 
-The generated jar file will be in the target folder
+The generated jar file will be in the target folder.
