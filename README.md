@@ -8,12 +8,12 @@ In order to use this script, you must have at least JRE 1.6 installed on your co
 <h3>Syntax</h3>
 
 Type the following in terminal
-<pre>java -jar mangafox_downloader.jar [REQUIRED] &lt;manga name&gt; [OPTIONAL] -v &lt;volume number&gt; -c &lt;chapitre number&gt;</pre>;
+<pre>java -jar mangafox_downloader.jar [REQUIRED] &lt;manga name&gt; [OPTIONAL] -v &lt;volume number&gt; -c &lt;chapitre number&gt;</pre>
 
 <h3>Options</h3>
-[REQUIRED] <pre>&lt;manga name&gt;</pre>
-Refers to the name of the manga you want to dowload as displayed on mangafox.me
-Case insensitive and can contain space but not special characters
+<b>REQUIRED</b> <pre>&lt;manga name&gt;</pre>
+Refers to the name of the manga you want to dowload as displayed on mangafox.me<br/>
+Case insensitive and can contain space but not special characters<br/>
 Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : www.mangafox.me/manga/&lt;manga name&gt;/
 
 <h4>EXAMPLES</h4>
