@@ -18,6 +18,7 @@ The manga will be downloaded at the root where the script has been executed.
 
 The manga folder will be like this :
 
+<p>
 <code>manga name</code>
   |
   |---<code>v_X</code>
@@ -26,7 +27,7 @@ The manga folder will be like this :
   |   |---<code>ch_Y+2</code>
   |
   |---<code>v_X+1</code>
-
+</p>
 
 <h3>Options</h3>
 All options and their arguments are case-insensitive.
