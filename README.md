@@ -4,7 +4,7 @@ Simple script for downloading mangas from mangafox.me
 This script let you easily download mangas from mangafox.me. You can also download a specific volume or a specific chapter
 
 In order to use this script, you must have at least <b>JRE 1.6</b> installed on your computer.<br/>
-The script can be direclty downloaded from the project directory on GitHub.
+The script can be direclty downloaded from the project's target directory on GitHub.
 
 <h3>DISCLAIMER</h3>
 Copyrights and trademarks for the manga, and other promotional materials are held by their respective owners and their use is allowed under the fair use clause of the Copyright Law. 
@@ -14,13 +14,29 @@ Copyrights and trademarks for the manga, and other promotional materials are hel
 Type the following in terminal
 <pre>java -jar mangafox_downloader.jar [REQUIRED] &lt;manga name&gt; [OPTIONAL] -v &lt;volume number&gt; -c &lt;chapitre number&gt;</pre>
 
+The manga will be downloaded at the root where the script has been executed.
+
+The manga folder will be like this :
+
+<code>manga name</code>
+  |
+  |---<code>v_X</code>
+  |   |---<code>ch_Y</code>
+  |   |---<code>ch_Y+1</code>
+  |   |---<code>ch_Y+2</code>
+  |
+  |---<code>v_X+1</code>
+
+
 <h3>Options</h3>
 All options and their arguments are case-insensitive.
 
 <b>REQUIRED</b> <pre>&lt;manga name&gt;</pre>
 Refers to the name of the manga you want to dowload as displayed on mangafox.me<br/>
 Case insensitive and can contain space but not special characters<br/>
-Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : <code>www.mangafox.me/manga/&lt;manga name&gt;/</code>
+Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : <code>www.mangafox.me/manga/&lt;manga name&gt;/</code></br>
+<b>The script will only download missing chapters. If you notice that some chapters lack pages, delete the chapter folder, the script will redownload it with, fortunately, every pages</b>
+
 
 <h4>Examples</h4>
 <pre>java -jar mangafox_downloader.jar naruto</pre>
