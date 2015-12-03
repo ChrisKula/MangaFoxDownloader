@@ -1,6 +1,10 @@
 *.project
 *.prefs
-copy_jar.cmd
-.classpath
+*.cmd
+*.classpath
 *.class
-target/
+*.settings
+target/archive-tmp
+target/generated-sources
+target/maven-archiver
+
