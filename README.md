@@ -18,8 +18,7 @@ The manga will be downloaded at the root where the script has been executed.
 
 The manga folder will be like this :
 
-&nbsp;&nbsp;|<code>manga name</code><br/>
-&nbsp;&nbsp;|<br/>
+&nbsp;&nbsp;<code>manga name</code><br/>
 &nbsp;&nbsp;|---<code>v_X</code><br/>
 &nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;|---<code>ch_Y</code><br/>
 &nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;|---<code>ch_Y+1</code><br/>
