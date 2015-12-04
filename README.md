@@ -33,7 +33,7 @@ All options and their arguments are case-insensitive.
 Refers to the name of the manga you want to dowload as displayed on mangafox.me<br/>
 Case insensitive and can contain space but not special characters<br/>
 Tip : To be sure you got it right, visit the desired manga page on mangafox.me. The name of the manga appears in the URL in this form : <code>www.mangafox.me/manga/&lt;manga name&gt;/</code></br>
-<b>The script will only download missing chapters. If you notice that some chapters lack pages, delete the chapter folder, the script will redownload it with, fortunately, every pages</b>
+<b>The script will only download missing chapters. If you notice that some chapters lack pages, delete the chapter folder, the script will redownload it with, hopefully, every pages</b>
 
 
 <h4>Examples</h4>
