@@ -23,7 +23,7 @@ import com.ckula.mangafoxdownloader.model.Chapter;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
 
 public class MangaDowloadService {
-    private final int TIME_OUT_IN_MILLIS = 5000;
+    private final int TIME_OUT_IN_MILLIS = 2500;
 
     private final Connection JSOUP_CONNECTION = Jsoup.connect("http://mangafox.me").timeout(TIME_OUT_IN_MILLIS);
     private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
@@ -37,6 +37,8 @@ public class MangaDowloadService {
     private final String VOLUME_FOLDER = "v_";
     private final String CHAPTER_FOLDER = "ch_";
 
+    private final int MAX_TRIES = 3;
+
     public MangaDowloadService(String mangaName) {
 	this.MANGA_NAME = mangaName;
 	this.MANGA_URL_NAME = StringUtils.transformToMangaFoxUrlName(MANGA_NAME);
@@ -44,7 +46,9 @@ public class MangaDowloadService {
 
     public void downloadManga(String mangaName) {
 	List<Chapter> chapters = getAllChapters(mangaName);
-
+	System.out.println("----------------------------------------------------------");
+	System.out.println("[START] Starting downloading manga : " + MANGA_NAME.toUpperCase());
+	System.out.println();
 	if (chapters.size() > 0) {
 	    List<Chapter> chaptersToUpdate = getChaptersToUpdate(chapters);
 	    if (chaptersToUpdate.size() == 0) {
@@ -213,13 +217,11 @@ public class MangaDowloadService {
 	} else {
 	    System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
 	}
+	System.out.println();
     }
 
     private void downloadChapters(List<Chapter> chapters) {
 	long start = System.nanoTime();
-	System.out.println("----------------------------------------------------------");
-	System.out.println("[START] Starting downloading manga : " + MANGA_NAME.toUpperCase());
-	System.out.println();
 	for (int i = 0; i < chapters.size(); i++) {
 	    Chapter chapter = chapters.get(i);
 
@@ -238,8 +240,8 @@ public class MangaDowloadService {
 	    while (it.hasNext()) {
 		Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
 		Chapter chapter = (Chapter) pair.getKey();
-		System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume " + chapter.getAssociatedVolume()
-			+ " - Reason : " + pair.getValue());
+		System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume "
+			+ chapter.getAssociatedVolume() + " - Reason : " + pair.getValue());
 		System.err.println();
 		it.remove();
 	    }
@@ -279,7 +281,7 @@ public class MangaDowloadService {
 	OutputStream os;
 
 	int tries = 0;
-	while (tries < 5) {
+	while (tries < MAX_TRIES) {
 	    if (!file.exists()) {
 		try {
 		    URL url = new URL(imageUrl);
