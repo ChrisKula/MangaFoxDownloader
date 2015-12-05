@@ -5,7 +5,9 @@
 *.class
 *.settings
 dev_pom.xml
+target/mangafox-downloader-1.0.0.jar
 target/archive-tmp
 target/generated-sources
 target/maven-archiver
+target/maven-status
 

@@ -38,6 +38,7 @@ public class Main {
 	    MangaDowloadService.printUnknowOptions();
 	    break;
 	}
+	System.out.println();
 	return;
     }
 }

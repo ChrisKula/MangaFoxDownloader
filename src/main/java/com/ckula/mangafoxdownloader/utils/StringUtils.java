@@ -3,7 +3,7 @@ package com.ckula.mangafoxdownloader.utils;
 public class StringUtils {
 
     public static String transformToMangaFoxUrlName(String mangaName) {
-	return mangaName.replace(" ", "_").replace("[^0-9a-zA-Z_]", "").toLowerCase();
+	return mangaName.replaceAll(" ", "_").replaceAll("[^0-9a-zA-Z_]", "").toLowerCase();
     }
 
     public static String getPageLinkModel(String pageUrl) {

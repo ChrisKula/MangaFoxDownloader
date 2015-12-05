@@ -48,7 +48,7 @@ public class MangaDowloadService {
 	if (chapters.size() > 0) {
 	    List<Chapter> chaptersToUpdate = getChaptersToUpdate(chapters);
 	    if (chaptersToUpdate.size() == 0) {
-		System.out.println("[UP TO DATE] The manga " + getMangaName().toUpperCase() + " is up to date\n");
+		System.out.println("[UP TO DATE] The manga " + getMangaName().toUpperCase() + " is up to date");
 	    } else {
 		downloadChapters(chaptersToUpdate);
 	    }
@@ -103,7 +103,7 @@ public class MangaDowloadService {
 	    rss = JSOUP_CONNECTION.url(MANGA_XML_URL + MANGA_URL_NAME + ".xml").get().getElementsByTag("rss").get(0);
 	} catch (IOException e) {
 	    System.err.println(
-		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection.\r\nKeep in mind that mangafox.me may be also down.");
+		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection. Keep in mind that mangafox.me may be also down.");
 	    return chapters;
 	} catch (IndexOutOfBoundsException ioobe) {
 	    System.err.println("[ERROR] The manga " + MANGA_NAME.toUpperCase()
@@ -167,7 +167,6 @@ public class MangaDowloadService {
 	    chapterFirstPage = JSOUP_CONNECTION.url(chapter.getLink()).get();
 	} catch (IOException e1) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber();
-	    System.err.println(error);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
@@ -177,7 +176,6 @@ public class MangaDowloadService {
 	if (chapter.getPagesCount() <= 0) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber()
 		    + ". Keep in mind in can be a problem on mangafox.me's side.";
-	    System.err.println(error);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
@@ -191,7 +189,6 @@ public class MangaDowloadService {
 		    page = JSOUP_CONNECTION.url(pageURL).get();
 		} catch (IOException e1) {
 		    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
-		    System.err.println(error);
 		    CHAPTERS_WITH_ERRORS.put(chapter, error);
 		    return;
 		}
@@ -216,7 +213,6 @@ public class MangaDowloadService {
 	} else {
 	    System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
 	}
-	System.out.println();
     }
 
     private void downloadChapters(List<Chapter> chapters) {
@@ -233,18 +229,18 @@ public class MangaDowloadService {
 
 	}
 	System.out.println("[END] " + MANGA_NAME.toUpperCase() + " download completed in "
-		+ (System.nanoTime() - start) / 1000000000 + " sec !\n");
+		+ (System.nanoTime() - start) / 1000000000 + " sec !");
 
 	if (CHAPTERS_WITH_ERRORS.size() > 0) {
-	    System.err.println("----------------------------------------------------------");
-	    System.err.println("CHAPTERS WITH ERRORS");
 	    System.err.println();
+	    System.err.println("------------------CHAPTERS WITH ERRORS--------------------");
 	    Iterator<Map.Entry<Chapter, String>> it = CHAPTERS_WITH_ERRORS.entrySet().iterator();
 	    while (it.hasNext()) {
 		Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
 		Chapter chapter = (Chapter) pair.getKey();
-		System.err.println("Chapter " + chapter.getChapterNumber() + ", volume " + chapter.getAssociatedVolume()
+		System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume " + chapter.getAssociatedVolume()
 			+ " - Reason : " + pair.getValue());
+		System.err.println();
 		it.remove();
 	    }
 	}
