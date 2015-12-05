@@ -68,4 +68,7 @@ In Eclipse, right click on the project -> Run as -> Maven build ... and type <co
 
 You can also execute <code>mvn package</code> at the project's root.
 
-The generated jar file will be in the target folder.
+The generated jar file will be in the target folder with the name <code>mangafox_downloader.jar</code>. Ignore the file <code>mangafox-downloader-X.X.X.jar</code>
+
+<h3>TODO</h3>
+Nothing at the moment
