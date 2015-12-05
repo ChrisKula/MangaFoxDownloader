@@ -1,5 +1,0 @@
-Change '/' to File.separator
-Change strings "v_" & "c_" to final variables
-MangaDowloadService.java [L190] Change the try clause 
-Add download duration per chapter
-Review the image download process

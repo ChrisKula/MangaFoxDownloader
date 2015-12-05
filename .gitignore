@@ -4,6 +4,7 @@
 *.classpath
 *.class
 *.settings
+dev_pom.xml
 target/archive-tmp
 target/generated-sources
 target/maven-archiver
