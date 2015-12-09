@@ -1,11 +1,22 @@
 package com.ckula.mangafoxdownloader.utils;
 
+import java.text.Normalizer;
+import java.util.regex.Pattern;
+
 public class StringUtils {
 
     public static String transformToMangaFoxUrlName(String mangaName) {
-	return mangaName.replaceAll(" ", "_").replaceAll("[^0-9a-zA-Z_]", "").toLowerCase();
+	return deAccent(mangaName).replaceAll(" ", "_").replaceAll("[^0-9a-zA-Z_]", "").toLowerCase();
     }
 
+    public static String deAccent(final String str) {
+	final String nfdNormalizedString = Normalizer.normalize(str,
+		Normalizer.Form.NFD);
+	final Pattern pattern = Pattern
+		.compile("\\p{InCombiningDiacriticalMarks}+");
+	return pattern.matcher(nfdNormalizedString).replaceAll("");
+    }
+    
     public static String getPageLinkModel(String pageUrl) {
 	String model = pageUrl;
 	int startIndex = 0;

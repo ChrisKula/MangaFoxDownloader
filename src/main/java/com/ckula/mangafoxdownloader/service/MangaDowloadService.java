@@ -116,13 +116,12 @@ public class MangaDowloadService {
 	}
 	Elements rssChapters = rss.getElementsByTag("item");
 
-	for (int i = 0; i < rssChapters.size(); i++) {
+	for (Element elem : rssChapters) {
 	    Chapter chapter = new Chapter();
-	    Element elem_chapter = rssChapters.get(i);
 
-	    chapter.setLink(elem_chapter.getElementsByTag("link").get(0).ownText());
+	    chapter.setLink(elem.getElementsByTag("link").get(0).ownText());
 
-	    String title = elem_chapter.getElementsByTag("title").get(0).ownText();
+	    String title = elem.getElementsByTag("title").get(0).ownText();
 	    title = title.replaceAll("[^0-9.\bTBD\b]+", " ").trim();
 
 	    String volume;
@@ -163,9 +162,6 @@ public class MangaDowloadService {
     }
 
     private void downloadOneChapter(Chapter chapter) {
-	String model = StringUtils.getPageLinkModel(chapter.getLink());
-	File chapterDirectory = new File(
-		getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber()));
 	Document chapterFirstPage;
 	try {
 	    chapterFirstPage = JSOUP_CONNECTION.url(chapter.getLink()).get();
@@ -174,6 +170,12 @@ public class MangaDowloadService {
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
+
+	System.out.println("[DL] Downloading chapter " + chapter.getChapterNumber() + " ...");
+
+	String model = StringUtils.getPageLinkModel(chapter.getLink());
+	File chapterDirectory = new File(
+		getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber()));
 	Elements e = chapterFirstPage.getElementsByTag("option");
 	chapter.setPagesCount((e.size() / 2) - 1);
 
@@ -183,7 +185,6 @@ public class MangaDowloadService {
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
-
 	long start = System.nanoTime();
 	if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()) {
 	    for (int i = 0; i < chapter.getPagesCount(); i++) {
@@ -196,14 +197,15 @@ public class MangaDowloadService {
 		    CHAPTERS_WITH_ERRORS.put(chapter, error);
 		    return;
 		}
-		try {
-		    String imgURL = page.getElementById("viewer").getElementsByTag("img").get(1).attr("src");
-		    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
-		} catch (IndexOutOfBoundsException ioobe) {
-		    String imgURL = page.getElementById("viewer").getElementsByTag("img").get(0).attr("src");
-		    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
-		}
 
+		Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
+		String imgURL;
+		try {
+		    imgURL = imgTags.get(1).attr("src");
+		} catch (IndexOutOfBoundsException ioobe) {
+		    imgURL = imgTags.get(0).attr("src");
+		}
+		saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
 	    }
 	    if (chapterDirectory.list().length >= chapter.getPagesCount()) {
 		System.out.print("[SUCCESS] Chapter " + chapter.getChapterNumber() + " downloaded - "
@@ -222,14 +224,11 @@ public class MangaDowloadService {
 
     private void downloadChapters(List<Chapter> chapters) {
 	long start = System.nanoTime();
-	for (int i = 0; i < chapters.size(); i++) {
-	    Chapter chapter = chapters.get(i);
 
-	    System.out.println("[DL] Downloading chapter " + chapter.getChapterNumber() + " ...");
-
+	for (Chapter chapter : chapters) {
 	    downloadOneChapter(chapter);
-
 	}
+
 	System.out.println("[END] " + MANGA_NAME.toUpperCase() + " download completed in "
 		+ (System.nanoTime() - start) / 1000000000 + " sec !");
 
@@ -249,9 +248,9 @@ public class MangaDowloadService {
 	System.out.println("----------------------------------------------------------");
     }
 
-    private List<Chapter> getSpecificVolume(final List<Chapter> manga, final String volumeNumber) {
+    private List<Chapter> getSpecificVolume(final List<Chapter> chapters, final String volumeNumber) {
 	final List<Chapter> volume = new ArrayList<Chapter>();
-	for (final Chapter chapter : manga) {
+	for (final Chapter chapter : chapters) {
 	    if (volumeNumber.equalsIgnoreCase(chapter.getAssociatedVolume())) {
 		volume.add(chapter);
 	    }
@@ -271,17 +270,16 @@ public class MangaDowloadService {
 	return chapters;
     }
 
-    private void saveImage(String imageUrl, String volumeNumber, String chapterNumber, int pageNumber) {
+    private boolean saveImage(String imageUrl, String volumeNumber, String chapterNumber, int pageNumber) {
 	String chapterDirectory = getChapterDirectory(MANGA_NAME, volumeNumber, chapterNumber);
 	File file = new File(chapterDirectory);
 	file.mkdirs();
-
 	String fileLocation = chapterDirectory + "0" + pageNumber + ".jpg";
 	file = new File(fileLocation);
 	OutputStream os;
 
-	int tries = 0;
-	while (tries < MAX_TRIES) {
+	int currentTry = 0;
+	while (currentTry < MAX_TRIES) {
 	    if (!file.exists()) {
 		try {
 		    URL url = new URL(imageUrl);
@@ -299,12 +297,13 @@ public class MangaDowloadService {
 		    is.close();
 		    os.close();
 		} catch (IOException e) {
-		    tries++;
+		    currentTry++;
 		}
 	    } else {
 		break;
 	    }
 	}
+	return file.exists();
     }
 
     public String getMangaName() {
