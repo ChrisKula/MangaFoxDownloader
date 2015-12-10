@@ -5,21 +5,19 @@ import java.util.regex.Pattern;
 
 public class StringUtils {
 
-    private StringUtils(){
+    private StringUtils() {
     }
-    
+
     public static String transformToMangaFoxUrlName(String mangaName) {
 	return deAccent(mangaName).replaceAll(" ", "_").replaceAll("[^0-9a-zA-Z_]", "").toLowerCase();
     }
 
     public static String deAccent(final String str) {
-	final String nfdNormalizedString = Normalizer.normalize(str,
-		Normalizer.Form.NFD);
-	final Pattern pattern = Pattern
-		.compile("\\p{InCombiningDiacriticalMarks}+");
+	final String nfdNormalizedString = Normalizer.normalize(str, Normalizer.Form.NFD);
+	final Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
 	return pattern.matcher(nfdNormalizedString).replaceAll("");
     }
-    
+
     public static String getPageLinkModel(String pageUrl) {
 	String model = pageUrl;
 	int startIndex = 0;

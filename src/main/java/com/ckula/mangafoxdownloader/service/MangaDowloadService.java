@@ -24,7 +24,7 @@ import com.ckula.mangafoxdownloader.utils.FileUtils;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
 
 public class MangaDowloadService {
-    private final int TIME_OUT_IN_MILLIS = 2500;
+    private final int TIME_OUT_IN_MILLIS = 3000;
 
     private final Connection JSOUP_CONNECTION = Jsoup.connect("http://mangafox.me").timeout(TIME_OUT_IN_MILLIS);
     private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
@@ -168,13 +168,14 @@ public class MangaDowloadService {
 	    chapterFirstPage = JSOUP_CONNECTION.url(chapter.getLink()).get();
 	} catch (IOException e1) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber();
-	    System.out.println("[ERROR] "+error);
+	    System.err.println("[ERROR] " + error);
 	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
 
-	System.out.println("[DL] Downloading volume "+chapter.getAssociatedVolume()+" chapter " + chapter.getChapterNumber() + " ...");
+	System.out.println("[DL] Downloading volume " + chapter.getAssociatedVolume() + " chapter "
+		+ chapter.getChapterNumber() + " ...");
 
 	String model = StringUtils.getPageLinkModel(chapter.getLink());
 	File chapterDirectory = new File(
@@ -185,7 +186,7 @@ public class MangaDowloadService {
 	if (chapter.getPagesCount() <= 0) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber()
 		    + ". Keep in mind in can be a problem on mangafox.me's side.";
-	    System.out.println("[ERROR] "+error);
+	    System.out.println("[ERROR] " + error);
 	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
@@ -199,7 +200,7 @@ public class MangaDowloadService {
 		    page = JSOUP_CONNECTION.url(pageURL).get();
 		} catch (IOException e1) {
 		    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
-		    System.out.println("[ERROR] "+error);
+		    System.err.println("[ERROR] " + error);
 		    removeChapterDirectory(chapter);
 		    CHAPTERS_WITH_ERRORS.put(chapter, error);
 		    return;
@@ -218,9 +219,13 @@ public class MangaDowloadService {
 		System.out.print("[SUCCESS] Chapter " + chapter.getChapterNumber() + " downloaded - "
 			+ chapter.getPagesCount() + " pages");
 	    } else {
-		System.out.print("[WARNING] Only " + chapterDirectory.list().length + " out of "
-			+ chapter.getPagesCount() + " have been downloaded for the chapter "
-			+ chapter.getChapterNumber() + ". Rerun the script to get every pages");
+		String error = "Only " + chapterDirectory.list().length + " out of " + chapter.getPagesCount()
+			+ " have been downloaded for the chapter " + chapter.getChapterNumber()
+			+ ". Rerun the script to get every pages";
+
+		System.err.println("[WARN] " + error);
+		removeChapterDirectory(chapter);
+		CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    }
 	    System.out.println(" - (" + (System.nanoTime() - start) / 1000000000 + " sec)");
 	} else {
@@ -303,7 +308,7 @@ public class MangaDowloadService {
 
 		    is.close();
 		    os.close();
-		} catch (IOException e) {
+		} catch (IOException ioe) {
 		    currentTry++;
 		}
 	    } else {
@@ -325,8 +330,9 @@ public class MangaDowloadService {
 	return mangaName + File.separator + VOLUME_FOLDER + volumeNumber + File.separator + CHAPTER_FOLDER
 		+ chapterNumber + File.separator + File.separator;
     }
-    
-    private void removeChapterDirectory(Chapter chapter){
-	FileUtils.forceDelete(new File(getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber())));
+
+    private void removeChapterDirectory(Chapter chapter) {
+	FileUtils.forceDelete(
+		new File(getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber())));
     }
 }

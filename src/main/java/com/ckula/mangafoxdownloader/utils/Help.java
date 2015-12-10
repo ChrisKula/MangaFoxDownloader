@@ -2,9 +2,9 @@ package com.ckula.mangafoxdownloader.utils;
 
 public class Help {
 
-    private Help(){
+    private Help() {
     }
-    
+
     public static void printHelp() {
 	StringBuilder help = new StringBuilder();
 
