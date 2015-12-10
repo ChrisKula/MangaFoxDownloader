@@ -73,5 +73,6 @@ The generated jar file will be in the target folder with the name <code>mangafox
 <h3>TODO</h3>
 <ul>
 <li>Add the volume number in the "Downloading chpater XX" message</li>
-<li>Remove chapters folders who haven't been correctly downloaded
+<li>Remove chapters folders who haven't been correctly downloaded</li>
+<li>Write a small error message when there's a problem when downloading a chapter</li>
 </ul>
