@@ -71,4 +71,7 @@ You can also execute <code>mvn package</code> at the project's root.
 The generated jar file will be in the target folder with the name <code>mangafox_downloader.jar</code>. Ignore the file <code>mangafox-downloader-X.X.X.jar</code>
 
 <h3>TODO</h3>
-Nothing at the moment
+<ul>
+<li>Add the volume number in the "Downloading chpater XX" message</li>
+<li>Remove chapters folders who haven't been correctly downloaded
+</ul>
