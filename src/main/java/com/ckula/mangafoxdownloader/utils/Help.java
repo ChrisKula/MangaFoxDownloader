@@ -2,8 +2,10 @@ package com.ckula.mangafoxdownloader.utils;
 
 public class Help {
 
+    private Help(){
+    }
+    
     public static void printHelp() {
-
 	StringBuilder help = new StringBuilder();
 
 	help.append("This script downloads mangas from mangafox.me. You must have the JRE 1.6 (or higher) installed.");

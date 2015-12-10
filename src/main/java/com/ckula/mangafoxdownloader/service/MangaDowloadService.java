@@ -20,6 +20,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import com.ckula.mangafoxdownloader.model.Chapter;
+import com.ckula.mangafoxdownloader.utils.FileUtils;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
 
 public class MangaDowloadService {
@@ -167,11 +168,13 @@ public class MangaDowloadService {
 	    chapterFirstPage = JSOUP_CONNECTION.url(chapter.getLink()).get();
 	} catch (IOException e1) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber();
+	    System.out.println("[ERROR] "+error);
+	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
 
-	System.out.println("[DL] Downloading chapter " + chapter.getChapterNumber() + " ...");
+	System.out.println("[DL] Downloading volume "+chapter.getAssociatedVolume()+" chapter " + chapter.getChapterNumber() + " ...");
 
 	String model = StringUtils.getPageLinkModel(chapter.getLink());
 	File chapterDirectory = new File(
@@ -182,6 +185,8 @@ public class MangaDowloadService {
 	if (chapter.getPagesCount() <= 0) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber()
 		    + ". Keep in mind in can be a problem on mangafox.me's side.";
+	    System.out.println("[ERROR] "+error);
+	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
 	    return;
 	}
@@ -194,6 +199,8 @@ public class MangaDowloadService {
 		    page = JSOUP_CONNECTION.url(pageURL).get();
 		} catch (IOException e1) {
 		    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
+		    System.out.println("[ERROR] "+error);
+		    removeChapterDirectory(chapter);
 		    CHAPTERS_WITH_ERRORS.put(chapter, error);
 		    return;
 		}
@@ -317,5 +324,9 @@ public class MangaDowloadService {
     private String getChapterDirectory(String mangaName, String volumeNumber, String chapterNumber) {
 	return mangaName + File.separator + VOLUME_FOLDER + volumeNumber + File.separator + CHAPTER_FOLDER
 		+ chapterNumber + File.separator + File.separator;
+    }
+    
+    private void removeChapterDirectory(Chapter chapter){
+	FileUtils.forceDelete(new File(getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber())));
     }
 }
