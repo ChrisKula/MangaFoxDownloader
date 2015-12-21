@@ -17,6 +17,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
 import com.ckula.mangafoxdownloader.model.Chapter;
@@ -24,11 +25,8 @@ import com.ckula.mangafoxdownloader.utils.FileUtils;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
 
 public class MangaDowloadService {
-    private final int TIME_OUT_IN_MILLIS = 3000;
-
-    private final Connection JSOUP_CONNECTION = Jsoup.connect("http://mangafox.me").timeout(TIME_OUT_IN_MILLIS);
-    private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
-    private final String MANGA_XML_URL = "http://mangafox.me/rss/";
+    private final String MANGAFOX_URL = "http://mangafox.me";
+    private final String MANGAFOR_XML_URL = "http://mangafox.me/rss/";
 
     private final String NOT_AVAILABLE = "NA";
 
@@ -39,6 +37,17 @@ public class MangaDowloadService {
     private final String CHAPTER_FOLDER = "ch_";
 
     private final int MAX_TRIES = 3;
+    private final int TIME_OUT_IN_MILLIS = 3000;
+
+    private final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.80 Safari/537.36";
+
+    private final Connection JSOUP_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
+	    .ignoreContentType(true).parser(Parser.htmlParser()).userAgent(USER_AGENT);
+
+    private final Connection JSOUP_XML_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
+	    .parser(Parser.xmlParser()).userAgent(USER_AGENT);
+
+    private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
 
     public MangaDowloadService(String mangaName) {
 	this.MANGA_NAME = mangaName;
@@ -105,10 +114,11 @@ public class MangaDowloadService {
 
 	Element rss;
 	try {
-	    rss = JSOUP_CONNECTION.url(MANGA_XML_URL + MANGA_URL_NAME + ".xml").get().getElementsByTag("rss").get(0);
+	    rss = JSOUP_XML_CONNECTION.url(MANGAFOR_XML_URL + MANGA_URL_NAME + ".xml").get().getElementsByTag("rss")
+		    .get(0);
 	} catch (IOException e) {
 	    System.err.println(
-		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection. Keep in mind that mangafox.me may be also down.");
+		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection. Keep in mind that mangafox.me may be down.");
 	    return chapters;
 	} catch (IndexOutOfBoundsException ioobe) {
 	    System.err.println("[ERROR] The manga " + MANGA_NAME.toUpperCase()
@@ -206,14 +216,24 @@ public class MangaDowloadService {
 		    return;
 		}
 
-		Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
-		String imgURL;
-		try {
-		    imgURL = imgTags.get(1).attr("src");
-		} catch (IndexOutOfBoundsException ioobe) {
-		    imgURL = imgTags.get(0).attr("src");
+		if (page.hasText()) {
+		    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
+		    String imgURL;
+		    try {
+			imgURL = imgTags.get(1).attr("src");
+		    } catch (IndexOutOfBoundsException ioobe) {
+			imgURL = imgTags.get(0).attr("src");
+		    }
+		    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
+		} else {
+		    String error = "Couldn't retrieve the page " + (i + 1)
+			    + " for unknown reasons. It appears randomly and is much likely a problem from MangaFox's side. Keep trying until you succeed.";
+
+		    System.err.println("[WARN] " + error);
+		    removeChapterDirectory(chapter);
+		    CHAPTERS_WITH_ERRORS.put(chapter, error);
+		    return;
 		}
-		saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
 	    }
 	    if (chapterDirectory.list().length >= chapter.getPagesCount()) {
 		System.out.print("[SUCCESS] Chapter " + chapter.getChapterNumber() + " downloaded - "
