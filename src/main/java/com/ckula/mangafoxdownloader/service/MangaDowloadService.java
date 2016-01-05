@@ -49,6 +49,8 @@ public class MangaDowloadService {
 
     private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
 
+    private boolean isMangaLicensed = false;
+
     public MangaDowloadService(String mangaName) {
 	this.MANGA_NAME = mangaName;
 	this.MANGA_URL_NAME = StringUtils.transformToMangaFoxUrlName(MANGA_NAME);
@@ -194,6 +196,12 @@ public class MangaDowloadService {
 	chapter.setPagesCount((e.size() / 2) - 1);
 
 	if (chapter.getPagesCount() <= 0) {
+	    String errorMsg = chapterFirstPage.getElementById("top_bar").getElementsByTag("span").html();
+	    if (errorMsg != null && (errorMsg.contains("licensed") || (errorMsg.contains("not available")))) {
+		isMangaLicensed = true;
+		return;
+	    }
+
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber()
 		    + ". Keep in mind in can be a problem on mangafox.me's side.";
 	    System.out.println("[ERROR] " + error);
@@ -258,26 +266,33 @@ public class MangaDowloadService {
 	long start = System.nanoTime();
 
 	for (Chapter chapter : chapters) {
+	    if (isMangaLicensed) {
+		break;
+	    }
+
 	    downloadOneChapter(chapter);
 	}
+	if (isMangaLicensed) {
+	    System.err.println("Sorry, this manga is licensed, and is not available from your current location.");
+	} else {
+	    System.out.println("[END] " + MANGA_NAME.toUpperCase() + " download completed in "
+		    + (System.nanoTime() - start) / 1000000000 + " sec !");
 
-	System.out.println("[END] " + MANGA_NAME.toUpperCase() + " download completed in "
-		+ (System.nanoTime() - start) / 1000000000 + " sec !");
-
-	if (CHAPTERS_WITH_ERRORS.size() > 0) {
-	    System.err.println();
-	    System.err.println("------------------CHAPTERS WITH ERRORS--------------------");
-	    Iterator<Map.Entry<Chapter, String>> it = CHAPTERS_WITH_ERRORS.entrySet().iterator();
-	    while (it.hasNext()) {
-		Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
-		Chapter chapter = (Chapter) pair.getKey();
-		System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume "
-			+ chapter.getAssociatedVolume() + " - Reason : " + pair.getValue());
+	    if (CHAPTERS_WITH_ERRORS.size() > 0) {
 		System.err.println();
-		it.remove();
+		System.err.println("------------------CHAPTERS WITH ERRORS--------------------");
+		Iterator<Map.Entry<Chapter, String>> it = CHAPTERS_WITH_ERRORS.entrySet().iterator();
+		while (it.hasNext()) {
+		    Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
+		    Chapter chapter = (Chapter) pair.getKey();
+		    System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume "
+			    + chapter.getAssociatedVolume() + " - Reason : " + pair.getValue());
+		    System.err.println();
+		    it.remove();
+		}
 	    }
+	    System.out.println("----------------------------------------------------------");
 	}
-	System.out.println("----------------------------------------------------------");
     }
 
     private List<Chapter> getSpecificVolume(final List<Chapter> chapters, final String volumeNumber) {
