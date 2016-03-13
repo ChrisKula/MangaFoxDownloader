@@ -213,18 +213,25 @@ public class MangaDowloadService {
 	if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()) {
 	    for (int i = 0; i < chapter.getPagesCount(); i++) {
 		String pageURL = String.format(model, i + 1);
-		Document page;
-		try {
-		    page = JSOUP_CONNECTION.url(pageURL).get();
-		} catch (IOException e1) {
-		    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
-		    System.err.println("[ERROR] " + error);
-		    removeChapterDirectory(chapter);
-		    CHAPTERS_WITH_ERRORS.put(chapter, error);
-		    return;
-		}
+		Document page = null;
 
-		if (page.hasText()) {
+		int currentTry = 0;
+		while (currentTry < MAX_TRIES) {
+		    try {
+			page = JSOUP_CONNECTION.url(pageURL).get();
+			break;
+		    } catch (IOException ioe) {
+			currentTry++;
+			if (currentTry >= MAX_TRIES) {
+			    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
+			    System.err.println("[ERROR] " + error);
+			    removeChapterDirectory(chapter);
+			    CHAPTERS_WITH_ERRORS.put(chapter, error);
+			}
+			return;
+		    }
+		}
+		if (page != null && page.hasText()) {
 		    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
 		    String imgURL;
 		    try {
