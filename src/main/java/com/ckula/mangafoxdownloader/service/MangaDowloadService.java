@@ -447,6 +447,14 @@ public class MangaDowloadService {
 	    title = title + "-";
 	}
 
+	if (title.length() > 60) {
+	    title = title.substring(0, 60);
+	} else if (title.length() < 60) {
+	    do {
+		title = title + "-";
+	    } while (title.length() < 60);
+	}
+
 	System.out.println(title);
 	if (mangaJsonFile.exists()) {
 	    String jsonContent = new String();
