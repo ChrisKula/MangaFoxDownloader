@@ -7,7 +7,9 @@ public class Help {
 
     public static void printHelp() {
 	StringBuilder help = new StringBuilder();
-
+	help.append("Mangafox Downloader v2.0 by C.Kula");
+	help.append(System.lineSeparator());
+	
 	help.append("This script downloads mangas from mangafox.me. You must have the JRE 1.6 (or higher) installed.");
 	help.append(System.lineSeparator());
 

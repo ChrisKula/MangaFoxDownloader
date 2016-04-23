@@ -7,12 +7,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
+import org.apache.commons.io.FileUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,17 +23,21 @@ import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
 import com.ckula.mangafoxdownloader.model.Chapter;
-import com.ckula.mangafoxdownloader.utils.FileUtils;
+import com.ckula.mangafoxdownloader.model.Manga;
+import com.ckula.mangafoxdownloader.model.MangaState;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class MangaDowloadService {
+    private Manga MANGA = null;
+
+    private int MANGA_STATE = MangaState.UNKNOWN;
+
     private final String MANGAFOX_URL = "http://mangafox.me";
     private final String MANGAFOR_XML_URL = "http://mangafox.me/rss/";
 
     private final String NOT_AVAILABLE = "NA";
-
-    private final String MANGA_NAME;
-    private final String MANGA_URL_NAME;
 
     private final String VOLUME_FOLDER = "v_";
     private final String CHAPTER_FOLDER = "ch_";
@@ -39,51 +45,58 @@ public class MangaDowloadService {
     private final int MAX_TRIES = 3;
     private final int TIME_OUT_IN_MILLIS = 3000;
 
-    private final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.80 Safari/537.36";
-
     private final Connection JSOUP_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
-	    .ignoreContentType(true).parser(Parser.htmlParser()).userAgent(USER_AGENT);
+	    .ignoreContentType(true).parser(Parser.htmlParser());
 
     private final Connection JSOUP_XML_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
-	    .parser(Parser.xmlParser()).userAgent(USER_AGENT);
+	    .parser(Parser.xmlParser());
 
     private final Map<Chapter, String> CHAPTERS_WITH_ERRORS = new HashMap<Chapter, String>();
 
-    private boolean isMangaLicensed = false;
+    private final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private List<Chapter> UPDATED_CHAPTERS = new ArrayList<Chapter>();
 
     public MangaDowloadService(String mangaName) {
-	this.MANGA_NAME = mangaName;
-	this.MANGA_URL_NAME = StringUtils.transformToMangaFoxUrlName(MANGA_NAME);
+	this.MANGA = new Manga(mangaName);
+
+	switch (retrieveMangaState()) {
+	case MangaState.VALID:
+	    retrieveMangaInfo();
+	    break;
+	}
     }
 
     public void downloadManga(String mangaName) {
-	List<Chapter> chapters = getAllChapters(mangaName);
-	System.out.println("----------------------------------------------------------");
-	System.out.println("[START] Starting downloading manga : " + MANGA_NAME.toUpperCase());
+	System.out.println("[START] Starting downloading manga : " + MANGA.getName().toUpperCase() + " ...");
 	System.out.println();
-	if (chapters.size() > 0) {
-	    List<Chapter> chaptersToUpdate = getChaptersToUpdate(chapters);
+
+	MANGA.getChapters().addAll(getAllChapters(MANGA.getName()));
+
+	if (MANGA.getChapters().size() > 0) {
+	    Set<Chapter> chaptersToUpdate = getChaptersToUpdate(MANGA.getChapters());
 	    if (chaptersToUpdate.size() == 0) {
-		System.out.println("[UP TO DATE] The manga " + getMangaName().toUpperCase() + " is up to date");
+		System.out.println("[UP TO DATE] The manga " + MANGA.getName().toUpperCase() + " is up to date !");
 	    } else {
 		downloadChapters(chaptersToUpdate);
 	    }
+
 	} else {
 	    System.err.println("No chapters have been found. Nothing has been downloaded");
 	}
-
+	System.out.println("------------------------------------------------------------");
     }
 
-    public void downloadSpecificVolume(String option, String argument) {
-	if ("-v".equalsIgnoreCase(option) && argument.matches("(?i)([0-9]+|NA|TBD){1}")) {
+    public void downloadSpecificVolume(String volumeOption, String volumeArgument) {
+	if ("-v".equalsIgnoreCase(volumeOption) && volumeArgument.matches("(?i)([0-9]+|NA|TBD){1}")) {
 
-	    List<Chapter> chapters = getAllChapters(option);
-	    chapters = getSpecificVolume(chapters, argument);
+	    Set<Chapter> chapters = getAllChapters(volumeOption);
+	    chapters = getSpecificVolume(chapters, volumeArgument);
 	    if (chapters.size() > 0) {
 		downloadChapters(chapters);
 	    } else {
-		System.err.println("No chapters have been found for the volume " + argument);
+		System.err.println("No chapters have been found for the volume " + volumeArgument);
 	    }
+	    System.out.println("------------------------------------------------------------");
 
 	} else {
 	    printUnknowOptions();
@@ -95,7 +108,7 @@ public class MangaDowloadService {
 	if ("-v".equalsIgnoreCase(volumeOption) && "-c".equalsIgnoreCase(chapitreOption)
 		&& volumeArgument.matches("(?i)([0-9]+|NA|TBD){1}") && chapitreArgument.matches("[0-9.]+")) {
 
-	    List<Chapter> chapters = getAllChapters(MANGA_NAME);
+	    Set<Chapter> chapters = getAllChapters(MANGA.getName());
 
 	    chapters = getSpecificChapter(chapters, volumeArgument, chapitreArgument);
 	    if (chapters.size() > 0) {
@@ -104,6 +117,7 @@ public class MangaDowloadService {
 		System.err.println(
 			"No chapters " + chapitreArgument + " have been found for the volume " + volumeArgument);
 	    }
+	    System.out.println("------------------------------------------------------------");
 
 	} else {
 	    printUnknowOptions();
@@ -111,19 +125,23 @@ public class MangaDowloadService {
 
     }
 
-    private List<Chapter> getAllChapters(String mangaName) {
-	List<Chapter> chapters = new ArrayList<Chapter>();
+    private Set<Chapter> getAllChapters(String mangaName) {
+	return getAllChapters(mangaName, false);
+    }
+
+    private Set<Chapter> getAllChapters(String mangaName, boolean checkNumberOfPages) {
+	Set<Chapter> chapters = new TreeSet<Chapter>();
 
 	Element rss;
 	try {
-	    rss = JSOUP_XML_CONNECTION.url(MANGAFOR_XML_URL + MANGA_URL_NAME + ".xml").get().getElementsByTag("rss")
+	    rss = JSOUP_XML_CONNECTION.url(MANGAFOR_XML_URL + MANGA.getUrlName() + ".xml").get().getElementsByTag("rss")
 		    .get(0);
 	} catch (IOException e) {
 	    System.err.println(
 		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection. Keep in mind that mangafox.me may be down.");
 	    return chapters;
 	} catch (IndexOutOfBoundsException ioobe) {
-	    System.err.println("[ERROR] The manga " + MANGA_NAME.toUpperCase()
+	    System.err.println("[ERROR] The manga " + MANGA.getName()
 		    + " does not exist (or it is refered differently by MangaFox)");
 	    return chapters;
 	}
@@ -153,136 +171,152 @@ public class MangaDowloadService {
 	    chapter.setChapterNumber(chap);
 	    chapter.setAssociatedVolume(volume);
 
+	    if (checkNumberOfPages) {
+		chapter.setPagesCount(getPagesCount(chapter));
+	    }
 	    chapters.add(chapter);
 	}
 
-	Collections.sort(chapters);
 	return chapters;
     }
 
-    private List<Chapter> getChaptersToUpdate(List<Chapter> chapters) {
-	List<Chapter> chaptersToDownload = new ArrayList<Chapter>();
-
+    private Set<Chapter> getChaptersToUpdate(Set<Chapter> chapters) {
+	Set<Chapter> chaptersToDownload = new TreeSet<Chapter>();
 	for (Chapter chapter : chapters) {
 	    File chapterDirectory = new File(
-		    getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber()));
-	    if (!chapterDirectory.exists()) {
+		    getChapterDirectory(MANGA.getName(), chapter.getAssociatedVolume(), chapter.getChapterNumber()));
+	    if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()
+		    || chapter.getPagesCount() == 0) {
 		chaptersToDownload.add(chapter);
 	    }
-
 	}
 	return chaptersToDownload;
     }
 
     private void downloadOneChapter(Chapter chapter) {
+	System.out.println("[DL] Downloading volume " + chapter.getAssociatedVolume() + " chapter "
+		+ chapter.getChapterNumber() + " ...");
+
+	if (chapter.getPagesCount() == 0) {
+	    chapter.setPagesCount(getPagesCount(chapter));
+	}
+
+	if (chapter.getPagesCount() > 0) {
+	    String model = StringUtils.getPageLinkModel(chapter.getLink());
+	    File chapterDirectory = new File(
+		    getChapterDirectory(MANGA.getName(), chapter.getAssociatedVolume(), chapter.getChapterNumber()));
+
+	    long start = System.nanoTime();
+	    if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()) {
+		for (int i = 0; i < chapter.getPagesCount(); i++) {
+		    int pageNumber = i + 1;
+
+		    if (!(new File(chapterDirectory.getPath() + "/0" + pageNumber + ".jpg").exists())) {
+			String pageURL = String.format(model, pageNumber);
+			Document page = null;
+
+			int currentTry = 0;
+			while (currentTry < MAX_TRIES) {
+			    try {
+				page = JSOUP_CONNECTION.url(pageURL).get();
+				break;
+			    } catch (IOException ioe) {
+				currentTry++;
+				if (currentTry >= MAX_TRIES) {
+				    String error = "Couldn't retrieve the page " + pageNumber + " of this chapter";
+				    System.err.println("[ERROR] " + error);
+				    CHAPTERS_WITH_ERRORS.put(chapter, error);
+				}
+				return;
+			    }
+			}
+			if (page != null && page.hasText()) {
+			    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
+			    String imgURL;
+			    try {
+				imgURL = imgTags.get(1).attr("src");
+			    } catch (IndexOutOfBoundsException ioobe) {
+				imgURL = imgTags.get(0).attr("src");
+			    }
+			    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), pageNumber);
+			} else {
+			    String error = "Couldn't retrieve the page " + pageNumber
+				    + " for unknown reasons. It appears randomly and is much likely a problem from MangaFox's side. Keep trying until you succeed.";
+
+			    System.err.println("[WARN] " + error);
+			    CHAPTERS_WITH_ERRORS.put(chapter, error);
+			    return;
+			}
+		    } else {
+			continue;
+		    }
+		}
+
+		if (chapterDirectory.list().length >= chapter.getPagesCount()) {
+		    System.out.print("[SUCCESS] Chapter " + chapter.getChapterNumber() + " downloaded - "
+			    + chapter.getPagesCount() + " pages");
+		    UPDATED_CHAPTERS.add(chapter);
+		} else {
+		    String error = "Only " + chapterDirectory.list().length + " out of " + chapter.getPagesCount()
+			    + " have been downloaded for the chapter " + chapter.getChapterNumber()
+			    + ". Rerun the script to get every pages";
+
+		    System.err.println("[WARN] " + error);
+		    CHAPTERS_WITH_ERRORS.put(chapter, error);
+		}
+		System.out.println(" - (" + (System.nanoTime() - start) / 1000000000 + " sec)");
+
+	    } else {
+		System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
+	    }
+	}
+	System.out.println();
+    }
+
+    private int getPagesCount(Chapter chapter) {
 	Document chapterFirstPage;
 	try {
 	    chapterFirstPage = JSOUP_CONNECTION.url(chapter.getLink()).get();
 	} catch (IOException e1) {
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber();
 	    System.err.println("[ERROR] " + error);
-	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
-	    return;
+	    return -1;
 	}
-
-	System.out.println("[DL] Downloading volume " + chapter.getAssociatedVolume() + " chapter "
-		+ chapter.getChapterNumber() + " ...");
-
-	String model = StringUtils.getPageLinkModel(chapter.getLink());
-	File chapterDirectory = new File(
-		getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber()));
 	Elements e = chapterFirstPage.getElementsByTag("option");
-	chapter.setPagesCount((e.size() / 2) - 1);
+	int pagesCount = (e.size() / 2) - 1;
 
-	if (chapter.getPagesCount() <= 0) {
+	if (pagesCount <= 0) {
 	    String errorMsg = chapterFirstPage.getElementById("top_bar").getElementsByTag("span").html();
 	    if (errorMsg != null && (errorMsg.contains("licensed") || (errorMsg.contains("not available")))) {
-		isMangaLicensed = true;
-		return;
+		MANGA.setLicensed(true);
+		return -1;
 	    }
 
 	    String error = "Couldn't retrieve the number of pages of this chapter : " + chapter.getChapterNumber()
 		    + ". Keep in mind in can be a problem on mangafox.me's side.";
 	    System.out.println("[ERROR] " + error);
-	    removeChapterDirectory(chapter);
 	    CHAPTERS_WITH_ERRORS.put(chapter, error);
-	    return;
-	}
-	long start = System.nanoTime();
-	if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()) {
-	    for (int i = 0; i < chapter.getPagesCount(); i++) {
-		String pageURL = String.format(model, i + 1);
-		Document page = null;
-
-		int currentTry = 0;
-		while (currentTry < MAX_TRIES) {
-		    try {
-			page = JSOUP_CONNECTION.url(pageURL).get();
-			break;
-		    } catch (IOException ioe) {
-			currentTry++;
-			if (currentTry >= MAX_TRIES) {
-			    String error = "Couldn't retrieve the page " + (i + 1) + " of this chapter";
-			    System.err.println("[ERROR] " + error);
-			    removeChapterDirectory(chapter);
-			    CHAPTERS_WITH_ERRORS.put(chapter, error);
-			}
-			return;
-		    }
-		}
-		if (page != null && page.hasText()) {
-		    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
-		    String imgURL;
-		    try {
-			imgURL = imgTags.get(1).attr("src");
-		    } catch (IndexOutOfBoundsException ioobe) {
-			imgURL = imgTags.get(0).attr("src");
-		    }
-		    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), i + 1);
-		} else {
-		    String error = "Couldn't retrieve the page " + (i + 1)
-			    + " for unknown reasons. It appears randomly and is much likely a problem from MangaFox's side. Keep trying until you succeed.";
-
-		    System.err.println("[WARN] " + error);
-		    removeChapterDirectory(chapter);
-		    CHAPTERS_WITH_ERRORS.put(chapter, error);
-		    return;
-		}
-	    }
-	    if (chapterDirectory.list().length >= chapter.getPagesCount()) {
-		System.out.print("[SUCCESS] Chapter " + chapter.getChapterNumber() + " downloaded - "
-			+ chapter.getPagesCount() + " pages");
-	    } else {
-		String error = "Only " + chapterDirectory.list().length + " out of " + chapter.getPagesCount()
-			+ " have been downloaded for the chapter " + chapter.getChapterNumber()
-			+ ". Rerun the script to get every pages";
-
-		System.err.println("[WARN] " + error);
-		removeChapterDirectory(chapter);
-		CHAPTERS_WITH_ERRORS.put(chapter, error);
-	    }
-	    System.out.println(" - (" + (System.nanoTime() - start) / 1000000000 + " sec)");
+	    return -1;
 	} else {
-	    System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
+	    return pagesCount;
 	}
-	System.out.println();
     }
 
-    private void downloadChapters(List<Chapter> chapters) {
+    private void downloadChapters(Set<Chapter> chapters) {
 	long start = System.nanoTime();
 
 	for (Chapter chapter : chapters) {
-	    if (isMangaLicensed) {
+	    if (MANGA.isLicensed()) {
 		break;
 	    }
 
 	    downloadOneChapter(chapter);
 	}
-	if (isMangaLicensed) {
+	if (MANGA.isLicensed()) {
 	    System.err.println("Sorry, this manga is licensed, and is not available from your current location.");
 	} else {
-	    System.out.println("[END] " + MANGA_NAME.toUpperCase() + " download completed in "
+	    System.out.println("[END] " + MANGA.getName().toUpperCase() + " download completed in "
 		    + (System.nanoTime() - start) / 1000000000 + " sec !");
 
 	    if (CHAPTERS_WITH_ERRORS.size() > 0) {
@@ -298,12 +332,22 @@ public class MangaDowloadService {
 		    it.remove();
 		}
 	    }
-	    System.out.println("----------------------------------------------------------");
+	    updateJSON();
 	}
     }
 
-    private List<Chapter> getSpecificVolume(final List<Chapter> chapters, final String volumeNumber) {
-	final List<Chapter> volume = new ArrayList<Chapter>();
+    private void updateJSON() {
+	File mangaJsonFile = new File(MANGA.getName() + "/" + MANGA.getName() + ".json");
+	try {
+	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA));
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+
+    }
+
+    private Set<Chapter> getSpecificVolume(final Set<Chapter> chapters, final String volumeNumber) {
+	final Set<Chapter> volume = new TreeSet<Chapter>();
 	for (final Chapter chapter : chapters) {
 	    if (volumeNumber.equalsIgnoreCase(chapter.getAssociatedVolume())) {
 		volume.add(chapter);
@@ -312,8 +356,8 @@ public class MangaDowloadService {
 	return volume;
     }
 
-    private List<Chapter> getSpecificChapter(List<Chapter> allChapters, String volumeNumber, String chapterNumber) {
-	final List<Chapter> chapters = new ArrayList<Chapter>();
+    private Set<Chapter> getSpecificChapter(Set<Chapter> allChapters, String volumeNumber, String chapterNumber) {
+	final Set<Chapter> chapters = new TreeSet<Chapter>();
 	for (final Chapter chapter : allChapters) {
 	    if (volumeNumber.equalsIgnoreCase(chapter.getAssociatedVolume())
 		    && chapterNumber.equalsIgnoreCase(chapter.getChapterNumber())) {
@@ -325,7 +369,7 @@ public class MangaDowloadService {
     }
 
     private boolean saveImage(String imageUrl, String volumeNumber, String chapterNumber, int pageNumber) {
-	String chapterDirectory = getChapterDirectory(MANGA_NAME, volumeNumber, chapterNumber);
+	String chapterDirectory = getChapterDirectory(MANGA.getName(), volumeNumber, chapterNumber);
 	File file = new File(chapterDirectory);
 	file.mkdirs();
 	String fileLocation = chapterDirectory + "0" + pageNumber + ".jpg";
@@ -360,10 +404,6 @@ public class MangaDowloadService {
 	return file.exists();
     }
 
-    public String getMangaName() {
-	return MANGA_NAME;
-    }
-
     public static void printUnknowOptions() {
 	System.err.println("Option(s) unknown. Use -help options to get help on how to use this script.");
     }
@@ -373,8 +413,70 @@ public class MangaDowloadService {
 		+ chapterNumber + File.separator + File.separator;
     }
 
-    private void removeChapterDirectory(Chapter chapter) {
-	FileUtils.forceDelete(
-		new File(getChapterDirectory(MANGA_NAME, chapter.getAssociatedVolume(), chapter.getChapterNumber())));
+    private int retrieveMangaState() {
+	MANGA_STATE = MangaState.VALID;
+	try {
+	    JSOUP_XML_CONNECTION.url(MANGAFOR_XML_URL + MANGA.getUrlName() + ".xml").get().getElementsByTag("rss")
+		    .get(0);
+	} catch (IOException e) {
+	    MANGA_STATE = MangaState.UNKNOWN;
+
+	} catch (IndexOutOfBoundsException ioobe) {
+	    MANGA_STATE = MangaState.INVALID;
+	}
+	return MANGA_STATE;
+
+    }
+
+    private void retrieveMangaInfo() {
+	File mangaJsonFile = new File(MANGA.getName() + "/" + MANGA.getName() + ".json");
+
+	int numberOfDashes = 60 - MANGA.getName().length();
+	if (numberOfDashes < 0) {
+	    numberOfDashes = 0;
+	}
+
+	String title = new String();
+
+	for (int i = 0; i < (numberOfDashes - 1) / 2; i++) {
+	    title = title + "-";
+	}
+	title = title + " " + MANGA.getName().toUpperCase() + " ";
+
+	for (int i = 0; i < (numberOfDashes - 1) / 2; i++) {
+	    title = title + "-";
+	}
+
+	System.out.println(title);
+	if (mangaJsonFile.exists()) {
+	    String jsonContent = new String();
+
+	    try {
+		jsonContent = FileUtils.readFileToString(mangaJsonFile);
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
+	    MANGA = GSON.fromJson(jsonContent, Manga.class);
+	} else {
+	    System.err.println("[WARN] " + mangaJsonFile.getName().toUpperCase() + " not found");
+	    System.err.println();
+	    System.err.println("This file stores the manga information. "
+		    + "It is automatically generated and updated every time you run the script. "
+		    + "The first generation can take a long time depending on the manga but don't worry, it only happens once.");
+	    System.out.println();
+	    System.out.println("[START] Retrieving manga infos ...");
+	    MANGA.setChapters(getAllChapters(MANGA.getName(), true));
+	    if (MANGA.getChapters().size() > 0) {
+		System.out.println("[SUCESS] Manga infos retrieved");
+		System.out.println();
+		updateJSON();
+	    } else {
+		System.err.println("[ERROR] No chapters have been found for " + MANGA.getName().toUpperCase());
+	    }
+	}
+    }
+
+    public int getMangaState() {
+	return this.MANGA_STATE;
     }
 }

@@ -1,29 +1,23 @@
 package com.ckula.mangafoxdownloader.model;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 public class Chapter implements Comparable<Chapter> {
 
-    private String name = "";
-    private String chapterNumber = "";
-    private int pagesCount = 0;
-
-    private String link = "";
+    @Expose
+    @SerializedName("volume")
     private String associatedVolume = "";
+
+    @Expose
+    @SerializedName("chapter")
+    private String chapterNumber = "";
+
+    private int pagesCount = 0;
+    private String link = "";
 
     public Chapter() {
 
-    }
-
-    public Chapter(String name, int pagesCount) {
-	this.name = name;
-	this.pagesCount = pagesCount;
-    }
-
-    public String getName() {
-	return name;
-    }
-
-    public void setName(String name) {
-	this.name = name;
     }
 
     public int getPagesCount() {
@@ -60,81 +54,89 @@ public class Chapter implements Comparable<Chapter> {
 
     @Override
     public String toString() {
-	return "Chapter [name=" + name + ", chapterNumber=" + chapterNumber + ", pagesCount=" + pagesCount + ", link="
-		+ link + ", associatedVolume=" + associatedVolume + "]";
+	return "Chapter [chapterNumber=" + chapterNumber + ", pagesCount=" + pagesCount + ", link=" + link
+		+ ", associatedVolume=" + associatedVolume + "]";
+    }
+
+    @Override
+    public int hashCode() {
+	final int prime = 31;
+	int result = 1;
+	result = prime * result + ((associatedVolume == null) ? 0 : associatedVolume.hashCode());
+	result = prime * result + ((chapterNumber == null) ? 0 : chapterNumber.hashCode());
+	return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+	if (this == obj) {
+	    return true;
+	}
+	if (obj == null) {
+	    return false;
+	}
+	if (!(obj instanceof Chapter)) {
+	    return false;
+	}
+	Chapter other = (Chapter) obj;
+	if (associatedVolume == null) {
+	    if (other.associatedVolume != null) {
+		return false;
+	    }
+	} else if (!associatedVolume.equalsIgnoreCase(other.associatedVolume)) {
+	    return false;
+	}
+	if (chapterNumber == null) {
+	    if (other.chapterNumber != null) {
+		return false;
+	    }
+	} else if (!chapterNumber.equalsIgnoreCase(other.chapterNumber)) {
+	    return false;
+	}
+	return true;
     }
 
     @Override
     public int compareTo(Chapter otherChapitre) {
-	Double thisChapterAssociatedVolume;
-	Double otherChapterAssociatedVolume;
 
-	boolean isThisAssociatedVolumeANumber = true;
-	boolean isOtherAssociatedVolumeANumber = true;
+	double thisValue = 0.0;
+	double otherValue = 0.0;
 
-	try {
-	    thisChapterAssociatedVolume = Double.parseDouble(this.getAssociatedVolume());
-	} catch (NumberFormatException e) {
-	    isThisAssociatedVolumeANumber = false;
-	    thisChapterAssociatedVolume = 0.0;
-	}
-
-	try {
-	    otherChapterAssociatedVolume = Double.parseDouble(otherChapitre.getAssociatedVolume());
-	} catch (NumberFormatException e) {
-	    isOtherAssociatedVolumeANumber = false;
-	    otherChapterAssociatedVolume = 0.0;
-	}
-
-	if (isThisAssociatedVolumeANumber && isOtherAssociatedVolumeANumber) {
-	    int diff = thisChapterAssociatedVolume.intValue() - otherChapterAssociatedVolume.intValue();
-	    if (diff == 0) {
-		Double thisChapterNumber;
-		Double otherChapNumber;
-		try {
-		    thisChapterNumber = Double.parseDouble(this.getChapterNumber());
-		} catch (NumberFormatException e) {
-		    return 1;
-		}
-
-		try {
-		    otherChapNumber = Double.parseDouble(otherChapitre.getChapterNumber());
-		} catch (NumberFormatException e) {
-		    return -1;
-		}
-
-		return thisChapterNumber.intValue() - otherChapNumber.intValue();
-	    } else {
-		return diff;
-	    }
-
-	} else if (isThisAssociatedVolumeANumber && !isOtherAssociatedVolumeANumber) {
-	    return -1;
-	} else if (!isThisAssociatedVolumeANumber && isOtherAssociatedVolumeANumber) {
-	    return 1;
+	if ("NA".equals(this.associatedVolume)) {
+	    thisValue = Double.MAX_VALUE;
+	} else if ("TBD".equals(this.associatedVolume)) {
+	    thisValue = Double.MAX_VALUE - 1;
 	} else {
-	    int diff = this.getAssociatedVolume().compareToIgnoreCase(otherChapitre.getAssociatedVolume());
-	    if (diff == 0) {
-		Double thisChapterNumber;
-		Double otherChapNumber;
-		try {
-		    thisChapterNumber = Double.parseDouble(this.getChapterNumber());
-		} catch (NumberFormatException e) {
-		    return 1;
-		}
-
-		try {
-		    otherChapNumber = Double.parseDouble(otherChapitre.getChapterNumber());
-		} catch (NumberFormatException e) {
-		    return -1;
-		}
-
-		return thisChapterNumber.intValue() - otherChapNumber.intValue();
-	    } else {
-		return diff;
-	    }
-
+	    thisValue = Double.valueOf(this.associatedVolume);
 	}
-    }
 
+	if ("NA".equals(otherChapitre.associatedVolume)) {
+	    otherValue = Double.MAX_VALUE;
+	} else if ("TBD".equals(otherChapitre.associatedVolume)) {
+	    otherValue = Double.MAX_VALUE - 1;
+	} else {
+	    otherValue = Double.valueOf(otherChapitre.associatedVolume);
+	}
+
+	int diff = 0;
+	if ((thisValue - otherValue) > 0) {
+	    diff = 1;
+	} else if ((thisValue - otherValue) < 0) {
+	    diff = -1;
+	}
+
+	if (diff == 0) {
+	    diff = 0;
+	    thisValue = Double.valueOf(this.chapterNumber);
+	    otherValue = Double.valueOf(otherChapitre.chapterNumber);
+
+	    if ((thisValue - otherValue) > 0) {
+		diff = 1;
+	    } else if ((thisValue - otherValue) < 0) {
+		diff = -1;
+	    }
+	}
+	
+	return diff;
+    }
 }
