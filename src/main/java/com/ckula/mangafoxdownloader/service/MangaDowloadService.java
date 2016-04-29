@@ -153,7 +153,7 @@ public class MangaDowloadService {
 	    chapter.setLink(elem.getElementsByTag("link").get(0).ownText());
 
 	    String title = elem.getElementsByTag("title").get(0).ownText();
-	    title = title.replaceAll("[^0-9.\bTBD\b]+", " ").trim();
+	    title = title.replaceAll("([^0-9.]+)(?!TBD)", " ").trim();
 
 	    String volume;
 	    String chap;
