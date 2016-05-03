@@ -7,12 +7,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.jsoup.Connection;
@@ -38,6 +41,7 @@ public class MangaDowloadService {
     private final String MANGAFOR_XML_URL = "http://mangafox.me/rss/";
 
     private final String NOT_AVAILABLE = "NA";
+    private final String TO_BE_DETERMINED = "TBD";
 
     private final String VOLUME_FOLDER = "v_";
     private final String CHAPTER_FOLDER = "ch_";
@@ -79,7 +83,6 @@ public class MangaDowloadService {
 	    } else {
 		downloadChapters(chaptersToUpdate);
 	    }
-
 	} else {
 	    System.err.println("No chapters have been found. Nothing has been downloaded");
 	}
@@ -134,8 +137,7 @@ public class MangaDowloadService {
 
 	Element rss;
 	try {
-	    rss = JSOUP_XML_CONNECTION.url(MANGAFOR_XML_URL + MANGA.getUrlName() + ".xml").get().getElementsByTag("rss")
-		    .get(0);
+	    rss = JSOUP_XML_CONNECTION.url(MANGA.getXmlLink()).get().getElementsByTag("rss").get(0);
 	} catch (IOException e) {
 	    System.err.println(
 		    "[ERROR] Couldn't connect to mangafox.me. Check your Internet connection. Keep in mind that mangafox.me may be down.");
@@ -153,21 +155,27 @@ public class MangaDowloadService {
 	    chapter.setLink(elem.getElementsByTag("link").get(0).ownText());
 
 	    String title = elem.getElementsByTag("title").get(0).ownText();
-	    title = title.replaceAll("([^0-9.]+)(?!TBD)", " ").trim();
 
-	    String volume;
-	    String chap;
+	    String volume = "";
+	    String chap = "";
 
-	    String[] volAndChap = title.split(" ");
+	    Pattern pattern = Pattern.compile("Vol ([0-9.TBD]+)");
+	    Matcher matcher = pattern.matcher(title);
 
-	    if (volAndChap.length < 2) {
-		volume = NOT_AVAILABLE;
+	    if (matcher.find()) {
+		volume = matcher.group(1).replaceFirst("^0+(?!$)", "");
 	    } else {
-		volume = volAndChap[volAndChap.length - 2].replaceFirst("^0+(?!$)", "");
+		volume = NOT_AVAILABLE;
 	    }
 
-	    chap = volAndChap[volAndChap.length - 1].replaceFirst("^0+(?!$)", "");
+	    pattern = Pattern.compile("Ch ([0-9.]+)");
+	    matcher = pattern.matcher(title);
 
+	    if (matcher.find()) {
+		chap = matcher.group(1).replaceFirst("^0+(?!$)", "");
+	    } else {
+		chap = NOT_AVAILABLE;
+	    }
 	    chapter.setChapterNumber(chap);
 	    chapter.setAssociatedVolume(volume);
 
@@ -194,14 +202,14 @@ public class MangaDowloadService {
     }
 
     private void downloadOneChapter(Chapter chapter) {
-	System.out.println("[DL] Downloading volume " + chapter.getAssociatedVolume() + " chapter "
-		+ chapter.getChapterNumber() + " ...");
-
 	if (chapter.getPagesCount() == 0) {
 	    chapter.setPagesCount(getPagesCount(chapter));
 	}
 
 	if (chapter.getPagesCount() > 0) {
+	    System.out.println("[DL] Downloading volume " + chapter.getAssociatedVolume() + " chapter "
+		    + chapter.getChapterNumber() + " ...");
+
 	    String model = StringUtils.getPageLinkModel(chapter.getLink());
 	    File chapterDirectory = new File(
 		    getChapterDirectory(MANGA.getName(), chapter.getAssociatedVolume(), chapter.getChapterNumber()));
@@ -269,6 +277,13 @@ public class MangaDowloadService {
 	    } else {
 		System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
 	    }
+	} else if (chapter.getPagesCount() == 0) {
+	    System.err.println("[ERROR] Volume " + chapter.getAssociatedVolume() + " chapter "
+		    + chapter.getChapterNumber() + " has no pages.");
+	} else {
+	    System.err.println("[IGNORE] Volume " + chapter.getAssociatedVolume() + " chapter "
+		    + chapter.getChapterNumber()
+		    + " has been ignored because it doesn't exist, even though MangaFox RSS feed says otherwise.");
 	}
 	System.out.println();
     }
@@ -316,6 +331,9 @@ public class MangaDowloadService {
 	if (MANGA.isLicensed()) {
 	    System.err.println("Sorry, this manga is licensed, and is not available from your current location.");
 	} else {
+	    updateJSON();
+	    updateFiles();
+
 	    System.out.println("[END] " + MANGA.getName().toUpperCase() + " download completed in "
 		    + (System.nanoTime() - start) / 1000000000 + " sec !");
 
@@ -326,13 +344,13 @@ public class MangaDowloadService {
 		while (it.hasNext()) {
 		    Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
 		    Chapter chapter = (Chapter) pair.getKey();
-		    System.err.println("• Chapter " + chapter.getChapterNumber() + ", volume "
+		    System.err.println("Chapter " + chapter.getChapterNumber() + ", volume "
 			    + chapter.getAssociatedVolume() + " - Reason : " + pair.getValue());
 		    System.err.println();
 		    it.remove();
 		}
 	    }
-	    updateJSON();
+
 	}
     }
 
@@ -341,9 +359,52 @@ public class MangaDowloadService {
 	try {
 	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA));
 	} catch (IOException e) {
+	    System.err.println("[ERROR] Unable to create the json file.\n");
 	    e.printStackTrace();
 	}
+    }
 
+    private void updateFiles() {
+	File naFolder = new File(MANGA.getName() + "/" + VOLUME_FOLDER + NOT_AVAILABLE);
+	File tbdFolder = new File(MANGA.getName() + "/" + VOLUME_FOLDER + TO_BE_DETERMINED);
+
+	List<File> files = new ArrayList<File>();
+
+	if (naFolder.exists()) {
+	    files.addAll(Arrays.asList(naFolder.listFiles()));
+	}
+	if (tbdFolder.exists()) {
+	    files.addAll(Arrays.asList(tbdFolder.listFiles()));
+	}
+
+	for (File file : files) {
+	    boolean exist = false;
+	    for (Chapter chap : MANGA.getChapters()) {
+		File jsonFile = new File(MANGA.getName() + "/" + VOLUME_FOLDER + chap.getAssociatedVolume() + "/"
+			+ CHAPTER_FOLDER + chap.getChapterNumber());
+
+		if (file.getAbsolutePath().equals(jsonFile.getAbsolutePath())) {
+		    exist = true;
+		    break;
+		}
+	    }
+	    if (!exist) {
+		try {
+		    FileUtils.deleteDirectory(file);
+		    System.out.println("[DEL] Deleted duplicate chapter : " + file.getPath());
+
+		} catch (IOException e) {
+		    System.out.println("[ERROR] Couldn't delete duplicate chapter : " + file.getPath());
+		}
+	    }
+	}
+
+	if (naFolder.exists() && naFolder.listFiles().length == 0) {
+	    naFolder.delete();
+	}
+	if (tbdFolder.exists() && tbdFolder.listFiles().length == 0) {
+	    tbdFolder.delete();
+	}
     }
 
     private Set<Chapter> getSpecificVolume(final Set<Chapter> chapters, final String volumeNumber) {
