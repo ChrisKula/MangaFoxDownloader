@@ -125,7 +125,6 @@ public class MangaDowloadService {
 	} else {
 	    printUnknowOptions();
 	}
-
     }
 
     private Set<Chapter> getAllChapters(String mangaName) {
@@ -496,27 +495,26 @@ public class MangaDowloadService {
 	if (numberOfDashes < 0) {
 	    numberOfDashes = 0;
 	}
-
-	String title = new String();
-
-	for (int i = 0; i < (numberOfDashes - 1) / 2; i++) {
-	    title = title + "-";
-	}
-	title = title + " " + MANGA.getName().toUpperCase() + " ";
+	String mangaTitle = new String();
 
 	for (int i = 0; i < (numberOfDashes - 1) / 2; i++) {
-	    title = title + "-";
+	    mangaTitle = mangaTitle + "-";
+	}
+	mangaTitle = mangaTitle + " " + MANGA.getName().toUpperCase() + " ";
+
+	for (int i = 0; i < (numberOfDashes - 1) / 2; i++) {
+	    mangaTitle = mangaTitle + "-";
 	}
 
-	if (title.length() > 60) {
-	    title = title.substring(0, 60);
-	} else if (title.length() < 60) {
+	if (mangaTitle.length() > 60) {
+	    mangaTitle = mangaTitle.substring(0, 60);
+	} else if (mangaTitle.length() < 60) {
 	    do {
-		title = title + "-";
-	    } while (title.length() < 60);
+		mangaTitle = mangaTitle + "-";
+	    } while (mangaTitle.length() < 60);
 	}
 
-	System.out.println(title);
+	System.out.println(mangaTitle);
 	if (mangaJsonFile.exists()) {
 	    String jsonContent = new String();
 

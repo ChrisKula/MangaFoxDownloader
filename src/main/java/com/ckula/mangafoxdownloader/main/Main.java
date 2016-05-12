@@ -7,10 +7,14 @@ import com.ckula.mangafoxdownloader.utils.Help;
 public class Main {
     private static MangaDowloadService mangaDowloadService;
 
+    public final static String APP_VERSION = "2.0.1";
+
     public static void main(String[] args) {
 	if (args.length > 0) {
 	    if ("-help".equalsIgnoreCase(args[0])) {
-		MangaDowloadService.printUnknowOptions();
+		Help.printHelp();
+	    } else if ("-version".equalsIgnoreCase(args[0])) {
+		System.out.println("Mangafox Downloader v" + Main.APP_VERSION + " by C.Kula");
 	    } else {
 		mangaDowloadService = new MangaDowloadService(args[0]);
 
@@ -18,12 +22,7 @@ public class Main {
 		case MangaState.VALID:
 		    switch (args.length) {
 		    case 1: {
-			if ("-help".equalsIgnoreCase(args[0])) {
-			    Help.printHelp();
-			    return;
-			} else {
-			    mangaDowloadService.downloadManga(args[0]);
-			}
+			mangaDowloadService.downloadManga(args[0]);
 		    }
 			break;
 		    case 3: {

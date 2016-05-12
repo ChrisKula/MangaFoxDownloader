@@ -1,5 +1,7 @@
 package com.ckula.mangafoxdownloader.utils;
 
+import com.ckula.mangafoxdownloader.main.Main;
+
 public class Help {
 
     private Help() {
@@ -7,9 +9,10 @@ public class Help {
 
     public static void printHelp() {
 	StringBuilder help = new StringBuilder();
-	help.append("Mangafox Downloader v2.0 by C.Kula");
 	help.append(System.lineSeparator());
-	
+	help.append("Mangafox Downloader v" + Main.APP_VERSION + " by C.Kula");
+	help.append(System.lineSeparator());
+
 	help.append("This script downloads mangas from mangafox.me. You must have the JRE 1.6 (or higher) installed.");
 	help.append(System.lineSeparator());
 
@@ -86,6 +89,14 @@ public class Help {
 	help.append("java -jar mangafox_downloader.jar naruto -v 60 -c 575");
 	help.append(System.lineSeparator());
 	help.append("java -jar mangafox_downloader.jar \"Kangoku Gakuen\" -v TBD -c 197");
+
+	help.append(System.lineSeparator());
+	help.append(System.lineSeparator());
+	help.append(System.lineSeparator());
+	
+	help.append("[OTHER] -version");
+	help.append(System.lineSeparator());
+	help.append("Display the script version");
 
 	System.out.println(help);
     }
