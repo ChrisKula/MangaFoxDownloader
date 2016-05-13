@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,6 +33,8 @@ import com.google.gson.GsonBuilder;
 
 public class MangaDowloadService {
     private Manga MANGA = null;
+
+    private final String DEFAULT_CHARSET = "UTF-8";
 
     private int MANGA_STATE = MangaState.UNKNOWN;
 
@@ -352,9 +355,9 @@ public class MangaDowloadService {
     }
 
     private void updateJSON() {
-	File mangaJsonFile = new File(MANGA.getName() + File.separator+ MANGA.getName() + ".json");
+	File mangaJsonFile = new File(MANGA.getName() + File.separator + MANGA.getName() + ".json");
 	try {
-	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA));
+	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA), Charset.forName(DEFAULT_CHARSET));
 
 	} catch (IOException e) {
 	    System.err.println("[ERROR] Unable to create the json file.\n");
@@ -378,8 +381,8 @@ public class MangaDowloadService {
 	for (File file : files) {
 	    boolean exist = false;
 	    for (Chapter chap : MANGA.getChapters()) {
-		File jsonFile = new File(MANGA.getName() + File.separator + VOLUME_FOLDER + chap.getAssociatedVolume() + File.separator
-			+ CHAPTER_FOLDER + chap.getChapterNumber());
+		File jsonFile = new File(MANGA.getName() + File.separator + VOLUME_FOLDER + chap.getAssociatedVolume()
+			+ File.separator + CHAPTER_FOLDER + chap.getChapterNumber());
 
 		if (file.getAbsolutePath().equals(jsonFile.getAbsolutePath())) {
 		    exist = true;
@@ -504,7 +507,7 @@ public class MangaDowloadService {
 	    String jsonContent = new String();
 
 	    try {
-		jsonContent = FileUtils.readFileToString(mangaJsonFile);
+		jsonContent = FileUtils.readFileToString(mangaJsonFile, Charset.forName(DEFAULT_CHARSET));
 	    } catch (IOException e) {
 		e.printStackTrace();
 	    }
