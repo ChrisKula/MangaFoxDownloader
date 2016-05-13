@@ -1,10 +1,8 @@
 package com.ckula.mangafoxdownloader.service;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -338,7 +336,7 @@ public class MangaDowloadService {
 
 	    if (CHAPTERS_WITH_ERRORS.size() > 0) {
 		System.err.println();
-		System.err.println("------------------CHAPTERS WITH ERRORS--------------------");
+		System.err.println("------------------ CHAPTERS WITH ERRORS --------------------");
 		Iterator<Map.Entry<Chapter, String>> it = CHAPTERS_WITH_ERRORS.entrySet().iterator();
 		while (it.hasNext()) {
 		    Map.Entry<Chapter, String> pair = (Map.Entry<Chapter, String>) it.next();
@@ -354,9 +352,10 @@ public class MangaDowloadService {
     }
 
     private void updateJSON() {
-	File mangaJsonFile = new File(MANGA.getName() + "/" + MANGA.getName() + ".json");
+	File mangaJsonFile = new File(MANGA.getName() + File.separator+ MANGA.getName() + ".json");
 	try {
 	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA));
+
 	} catch (IOException e) {
 	    System.err.println("[ERROR] Unable to create the json file.\n");
 	    e.printStackTrace();
@@ -364,8 +363,8 @@ public class MangaDowloadService {
     }
 
     private void updateFiles() {
-	File naFolder = new File(MANGA.getName() + "/" + VOLUME_FOLDER + NOT_AVAILABLE);
-	File tbdFolder = new File(MANGA.getName() + "/" + VOLUME_FOLDER + TO_BE_DETERMINED);
+	File naFolder = new File(MANGA.getName() + File.separator + VOLUME_FOLDER + NOT_AVAILABLE);
+	File tbdFolder = new File(MANGA.getName() + File.separator + VOLUME_FOLDER + TO_BE_DETERMINED);
 
 	List<File> files = new ArrayList<File>();
 
@@ -379,7 +378,7 @@ public class MangaDowloadService {
 	for (File file : files) {
 	    boolean exist = false;
 	    for (Chapter chap : MANGA.getChapters()) {
-		File jsonFile = new File(MANGA.getName() + "/" + VOLUME_FOLDER + chap.getAssociatedVolume() + "/"
+		File jsonFile = new File(MANGA.getName() + File.separator + VOLUME_FOLDER + chap.getAssociatedVolume() + File.separator
 			+ CHAPTER_FOLDER + chap.getChapterNumber());
 
 		if (file.getAbsolutePath().equals(jsonFile.getAbsolutePath())) {
@@ -429,38 +428,24 @@ public class MangaDowloadService {
     }
 
     private boolean saveImage(String imageUrl, String volumeNumber, String chapterNumber, int pageNumber) {
-	String chapterDirectory = getChapterDirectory(MANGA.getName(), volumeNumber, chapterNumber);
-	File file = new File(chapterDirectory);
-	file.mkdirs();
-	String fileLocation = chapterDirectory + "0" + pageNumber + ".jpg";
-	file = new File(fileLocation);
-	OutputStream os;
+	String fileLocation = getChapterDirectory(MANGA.getName(), volumeNumber, chapterNumber) + "0" + pageNumber
+		+ ".jpg";
+	File file = new File(fileLocation);
 
 	int currentTry = 0;
+
 	while (currentTry < MAX_TRIES) {
-	    if (!file.exists()) {
-		try {
-		    URL url = new URL(imageUrl);
-		    InputStream is = url.openStream();
-
-		    file.createNewFile();
-		    os = new FileOutputStream(file);
-		    byte[] b = new byte[2048];
-		    int length;
-
-		    while ((length = is.read(b)) != -1) {
-			os.write(b, 0, length);
-		    }
-
-		    is.close();
-		    os.close();
-		} catch (IOException ioe) {
-		    currentTry++;
-		}
-	    } else {
-		break;
+	    try {
+		FileUtils.copyURLToFile(new URL(imageUrl), file, TIME_OUT_IN_MILLIS, TIME_OUT_IN_MILLIS);
+	    } catch (MalformedURLException e) {
+	    } catch (IOException ioe) {
+		currentTry++;
+		ioe.printStackTrace();
+		continue;
 	    }
+	    break;
 	}
+
 	return file.exists();
     }
 
@@ -489,7 +474,7 @@ public class MangaDowloadService {
     }
 
     private void retrieveMangaInfo() {
-	File mangaJsonFile = new File(MANGA.getName() + "/" + MANGA.getName() + ".json");
+	File mangaJsonFile = new File(MANGA.getName() + File.separator + MANGA.getName() + ".json");
 
 	int numberOfDashes = 60 - MANGA.getName().length();
 	if (numberOfDashes < 0) {
