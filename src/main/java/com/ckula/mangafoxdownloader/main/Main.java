@@ -7,7 +7,7 @@ import com.ckula.mangafoxdownloader.utils.Help;
 public class Main {
     private static MangaDowloadService mangaDowloadService;
 
-    public final static String APP_VERSION = "2.0.2";
+    public final static String APP_VERSION = "2.0.3";
 
     public static void main(String[] args) {
 	if (args.length > 0) {

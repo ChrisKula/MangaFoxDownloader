@@ -1,6 +1,7 @@
 package com.ckula.mangafoxdownloader.service;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,7 +49,7 @@ public class MangaDowloadService {
     private final String CHAPTER_FOLDER = "ch_";
 
     private final int MAX_TRIES = 3;
-    private final int TIME_OUT_IN_MILLIS = 3000;
+    private final int TIME_OUT_IN_MILLIS = 5000;
 
     private final Connection JSOUP_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
 	    .ignoreContentType(true).parser(Parser.htmlParser());
@@ -193,7 +194,18 @@ public class MangaDowloadService {
 	for (Chapter chapter : chapters) {
 	    File chapterDirectory = new File(
 		    getChapterDirectory(MANGA.getName(), chapter.getAssociatedVolume(), chapter.getChapterNumber()));
-	    if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()
+
+	    int chapterPagesCount = 0;
+	    if (chapterDirectory.exists()) {
+		chapterPagesCount = chapterDirectory.listFiles(new FileFilter() {
+		    @Override
+		    public boolean accept(File file) {
+			return !file.isHidden();
+		    }
+		}).length;
+	    }
+
+	    if (!chapterDirectory.exists() || chapterPagesCount < chapter.getPagesCount()
 		    || chapter.getPagesCount() == 0) {
 		chaptersToDownload.add(chapter);
 	    }
@@ -241,11 +253,15 @@ public class MangaDowloadService {
 			if (page != null && page.hasText()) {
 			    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
 			    String imgURL;
+			    
 			    try {
-				imgURL = imgTags.get(1).attr("src");
+				imgURL = StringUtils.substringBetween(imgTags.get(1).attr("onerror"), "'");
 			    } catch (IndexOutOfBoundsException ioobe) {
-				imgURL = imgTags.get(0).attr("src");
+				imgURL = StringUtils.substringBetween(imgTags.get(0).attr("onerror"), "'");
 			    }
+			    
+			    
+
 			    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), pageNumber);
 			} else {
 			    String error = "Couldn't retrieve the page " + pageNumber
@@ -360,8 +376,7 @@ public class MangaDowloadService {
 	    FileUtils.writeStringToFile(mangaJsonFile, GSON.toJson(MANGA), Charset.forName(DEFAULT_CHARSET));
 
 	} catch (IOException e) {
-	    System.err.println("[ERROR] Unable to create the json file.\n");
-	    e.printStackTrace();
+	    System.err.println("[ERROR] Unable to create or update the json file.\n");
 	}
     }
 
@@ -435,19 +450,16 @@ public class MangaDowloadService {
 		+ ".jpg";
 	File file = new File(fileLocation);
 
-	int currentTry = 0;
-
-	while (currentTry < MAX_TRIES) {
 	    try {
-		FileUtils.copyURLToFile(new URL(imageUrl), file, TIME_OUT_IN_MILLIS, TIME_OUT_IN_MILLIS);
+		if (file.exists()) {
+		    file.delete();
+		}
+		
+		FileUtils.copyURLToFile(new URL(imageUrl), file, TIME_OUT_IN_MILLIS * 2, TIME_OUT_IN_MILLIS * 2);
 	    } catch (MalformedURLException e) {
 	    } catch (IOException ioe) {
-		currentTry++;
-		ioe.printStackTrace();
-		continue;
+		 file.delete();
 	    }
-	    break;
-	}
 
 	return file.exists();
     }
