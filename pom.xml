@@ -10,20 +10,22 @@
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
-			<version>RELEASE</version>
+			<version>1.9.2</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
-			<version>RELEASE</version>
+			<version>2.7</version>
 		</dependency>
+
 
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>RELEASE</version>
+			<version>2.5</version>
 		</dependency>
+
 	</dependencies>
 
 	<build>
