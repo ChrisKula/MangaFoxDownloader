@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,7 @@ import org.jsoup.select.Elements;
 import com.ckula.mangafoxdownloader.model.Chapter;
 import com.ckula.mangafoxdownloader.model.Manga;
 import com.ckula.mangafoxdownloader.model.MangaState;
+import com.ckula.mangafoxdownloader.utils.HumanTime;
 import com.ckula.mangafoxdownloader.utils.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -50,6 +53,8 @@ public class MangaDowloadService {
 
     private final int MAX_TRIES = 3;
     private final int TIME_OUT_IN_MILLIS = 5000;
+
+    private final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     private final Connection JSOUP_CONNECTION = Jsoup.connect(MANGAFOX_URL).timeout(TIME_OUT_IN_MILLIS)
 	    .ignoreContentType(true).parser(Parser.htmlParser());
@@ -226,7 +231,7 @@ public class MangaDowloadService {
 	    File chapterDirectory = new File(
 		    getChapterDirectory(MANGA.getName(), chapter.getAssociatedVolume(), chapter.getChapterNumber()));
 
-	    long start = System.nanoTime();
+	    long start = System.currentTimeMillis();
 	    if (!chapterDirectory.exists() || chapterDirectory.list().length < chapter.getPagesCount()) {
 		for (int i = 0; i < chapter.getPagesCount(); i++) {
 		    int pageNumber = i + 1;
@@ -238,7 +243,7 @@ public class MangaDowloadService {
 			int currentTry = 0;
 			while (currentTry < MAX_TRIES) {
 			    try {
-				page = JSOUP_CONNECTION.url(pageURL).get();
+				page = Jsoup.connect(pageURL).get();
 				break;
 			    } catch (IOException ioe) {
 				currentTry++;
@@ -253,14 +258,12 @@ public class MangaDowloadService {
 			if (page != null && page.hasText()) {
 			    Elements imgTags = page.getElementById("viewer").getElementsByTag("img");
 			    String imgURL;
-			    
+
 			    try {
 				imgURL = StringUtils.substringBetween(imgTags.get(1).attr("onerror"), "'");
 			    } catch (IndexOutOfBoundsException ioobe) {
 				imgURL = StringUtils.substringBetween(imgTags.get(0).attr("onerror"), "'");
 			    }
-			    
-			    
 
 			    saveImage(imgURL, chapter.getAssociatedVolume(), chapter.getChapterNumber(), pageNumber);
 			} else {
@@ -288,7 +291,7 @@ public class MangaDowloadService {
 		    System.err.println("[WARN] " + error);
 		    CHAPTERS_WITH_ERRORS.put(chapter, error);
 		}
-		System.out.println(" - (" + (System.nanoTime() - start) / 1000000000 + " sec)");
+		System.out.println(" - ("+HumanTime.exactly(System.currentTimeMillis() - start)+")");
 
 	    } else {
 		System.out.println("[SKIP] Skipping chapter " + chapter.getChapterNumber() + " : already downloaded");
@@ -334,24 +337,46 @@ public class MangaDowloadService {
 	}
     }
 
-    private void downloadChapters(Set<Chapter> chapters) {
-	long start = System.nanoTime();
+    private class DownloadOneChapterThread implements Runnable {
 
+	private Chapter chapter;
+
+	public DownloadOneChapterThread(Chapter chapter) {
+	    this.chapter = chapter;
+	}
+
+	@Override
+	public void run() {
+	    downloadOneChapter(chapter);
+	}
+
+    }
+
+    private void downloadChapters(Set<Chapter> chapters) {
+	long start = System.currentTimeMillis();
+
+	ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 	for (Chapter chapter : chapters) {
 	    if (MANGA.isLicensed()) {
 		break;
 	    }
 
-	    downloadOneChapter(chapter);
+	    executor.execute(new DownloadOneChapterThread(chapter));
+	    // downloadOneChapter(chapter);
 	}
+	executor.shutdown();
+
+	while (!executor.isTerminated()) {
+	}
+	
+	
 	if (MANGA.isLicensed()) {
 	    System.err.println("Sorry, this manga is licensed, and is not available from your current location.");
 	} else {
 	    updateJSON();
 	    updateFiles();
 
-	    System.out.println("[END] " + MANGA.getName().toUpperCase() + " download completed in "
-		    + (System.nanoTime() - start) / 1000000000 + " sec !");
+	    System.out.println("[END] " + MANGA.getName().toUpperCase() + " download completed in "+HumanTime.exactly(System.currentTimeMillis() - start)+" sec !");
 
 	    if (CHAPTERS_WITH_ERRORS.size() > 0) {
 		System.err.println();
@@ -450,16 +475,16 @@ public class MangaDowloadService {
 		+ ".jpg";
 	File file = new File(fileLocation);
 
-	    try {
-		if (file.exists()) {
-		    file.delete();
-		}
-		
-		FileUtils.copyURLToFile(new URL(imageUrl), file, TIME_OUT_IN_MILLIS * 2, TIME_OUT_IN_MILLIS * 2);
-	    } catch (MalformedURLException e) {
-	    } catch (IOException ioe) {
-		 file.delete();
+	try {
+	    if (file.exists()) {
+		file.delete();
 	    }
+
+	    FileUtils.copyURLToFile(new URL(imageUrl), file, TIME_OUT_IN_MILLIS * 2, TIME_OUT_IN_MILLIS * 2);
+	} catch (MalformedURLException e) {
+	} catch (IOException ioe) {
+	    file.delete();
+	}
 
 	return file.exists();
     }
