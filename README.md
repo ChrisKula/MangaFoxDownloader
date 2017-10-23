@@ -1,3 +1,9 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+<h1>DEPRECATED</h1>
+
+mangafox.me has changed a lot of their internal stuff and this project no longer works as intended. Besides, the code architecture is awful. Have a look at <a href="https://github.com/ChrisKula/vulpes">vulpes</a>, a more modular, better thought alternative to this "script" in Koltin.
+
 <h2>MangaFoxDownloader</h2>
 Simple script for downloading mangas from mangafox.me
 
